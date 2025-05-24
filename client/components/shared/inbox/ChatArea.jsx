@@ -169,18 +169,25 @@ const ChatArea = () => {
             <main className="flex-1 flex flex-col bg-white border-r border-gray-100">
                 <div className="p-[1.165rem] border-b border-gray-200">
                     <h2 className="text-sm font-semibold flex items-center gap-1">
-                        {selectedUserDetails.username || "Unknown"} | &nbsp;
-                        <span className="flex items-center gap-1">
-                            <span
-                                className={`w-2 h-2 rounded-full blink-dot ${onlineUsers[recipientId] ? "bg-green-500" : "bg-gray-400"
-                                    }`}
-                            ></span>
-                            <span className={onlineUsers[recipientId] ? "text-green-600" : "text-gray-400"}>
-                                {onlineUsers[recipientId] ? "Online" : "Offline"}
-                            </span>
-                        </span>
+                        {selectedUserDetails.username ? (
+                            <>
+                                {selectedUserDetails.username} |&nbsp;
+                                <span className="flex items-center gap-1">
+                                    <span
+                                        className={`w-2 h-2 rounded-full blink-dot ${onlineUsers[recipientId] ? "bg-green-500" : "bg-gray-400"
+                                            }`}
+                                    ></span>
+                                    <span className={onlineUsers[recipientId] ? "text-green-600" : "text-gray-400"}>
+                                        {onlineUsers[recipientId] ? "Online" : "Offline"}
+                                    </span>
+                                </span>
+                            </>
+                        ) : (
+                            "Select a user to start the chat"
+                        )}
                     </h2>
                 </div>
+
 
 
                 <div className="flex-1 p-6 space-y-6 overflow-y-auto">
@@ -228,7 +235,7 @@ const ChatArea = () => {
                     {/* Scroll Anchor */}
                     <div ref={messageEndRef} />
                 </div>
-
+{selectedUserDetails.username ? 
                 <footer className="p-4 border-t border-gray-200">
                     <div className="flex gap-2">
                         <input
@@ -247,6 +254,7 @@ const ChatArea = () => {
                         <button onClick={handleSendMessage} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Send</button>
                     </div>
                 </footer>
+: <></> } 
             </main>
         </>
     )

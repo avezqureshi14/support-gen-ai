@@ -18,6 +18,8 @@ const Page = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     dispatch(signin(form));
+    router.push('/inbox');
+
   };
 
 
