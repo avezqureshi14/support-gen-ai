@@ -5,14 +5,16 @@ import React, { useEffect, useRef, useState } from 'react'
 import { io } from 'socket.io-client';
 import { useDispatch, useSelector } from 'react-redux';
 import { getMessagesByMessageId } from '@/state/actions/message';
+import Image from 'next/image';
+import { getRelativeTime } from '@/utils/method';
 
 const ChatArea = () => {
     const [socket, setSocket] = useState(null);
     const [messageText, setMessageText] = useState('');
     const [messages, setMessages] = useState({}); // { senderId: [{senderId, message}], senderId2: [] }
-    const [userList, setUserList] = useState([]);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [greetingMessage, setGreetingMessage] = useState(''); // Personalized greeting
+    const [onlineUsers, setOnlineUsers] = useState({});
+    const selectedUserDetails = useSelector(state => state.users.selectedUserDetails || [])
+    console.log("selectedUserDetails", selectedUserDetails);
     const messageEndRef = useRef(null);
     const dispatch = useDispatch();
     console.log(messages)
@@ -85,6 +87,31 @@ const ChatArea = () => {
             });
         });
 
+        newSocket.on("user-online", ({ userId }) => {
+            setOnlineUsers(prev => ({ ...prev, [userId]: true }));
+        });
+
+        newSocket.on("user-offline", ({ userId }) => {
+            setOnlineUsers(prev => {
+                const newStatus = { ...prev };
+                delete newStatus[userId];
+                return newStatus;
+            });
+        });
+
+        newSocket.on("online-users", (userIds) => {
+            const onlineMap = {};
+            userIds.forEach((id) => {
+                onlineMap[id] = true;
+            });
+            setOnlineUsers((prev) => ({
+                ...prev,
+                ...onlineMap,
+            }));
+        });
+
+
+
         newSocket.on("error", (errorMessage) => {
             alert(errorMessage);
         });
@@ -141,8 +168,20 @@ const ChatArea = () => {
         <>
             <main className="flex-1 flex flex-col bg-white border-r border-gray-100">
                 <div className="p-[1.165rem] border-b border-gray-200">
-                    <h2 className="text-sm font-semibold">Luis Easton</h2>
+                    <h2 className="text-sm font-semibold flex items-center gap-1">
+                        {selectedUserDetails.username || "Unknown"} | &nbsp;
+                        <span className="flex items-center gap-1">
+                            <span
+                                className={`w-2 h-2 rounded-full blink-dot ${onlineUsers[recipientId] ? "bg-green-500" : "bg-gray-400"
+                                    }`}
+                            ></span>
+                            <span className={onlineUsers[recipientId] ? "text-green-600" : "text-gray-400"}>
+                                {onlineUsers[recipientId] ? "Online" : "Offline"}
+                            </span>
+                        </span>
+                    </h2>
                 </div>
+
 
                 <div className="flex-1 p-6 space-y-6 overflow-y-auto">
                     {recipientId &&
@@ -156,7 +195,14 @@ const ChatArea = () => {
                                     className={`flex items-start space-x-3 ${isOwnMessage ? 'justify-end flex-row-reverse' : ''}`}
                                 >
                                     {/* Profile circle */}
-                                    <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+                                    <Image
+                                        className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0"
+                                        // src={item.chatWith.imageUrl || "https://cdn4.iconfinder.com/data/icons/fashion-icons/154/hipster-512.png"}
+                                        src={"https://cdn4.iconfinder.com/data/icons/fashion-icons/154/hipster-512.png"}
+                                        alt="User Avatar"
+                                        width={32}
+                                        height={32}
+                                    />
 
                                     {/* Message bubble */}
                                     <div
@@ -166,7 +212,13 @@ const ChatArea = () => {
                                                 : 'bg-gray-100 text-gray-900'}
                 max-w-[300px] w-fit break-words`}
                                     >
-                                        {message.message}
+                                        {/* Message text */}
+                                        <span>{message.message}</span>
+
+                                        {/* Time below message, smaller & gray */}
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            {getRelativeTime(message.createdAt, "Just Now")}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -179,10 +231,19 @@ const ChatArea = () => {
 
                 <footer className="p-4 border-t border-gray-200">
                     <div className="flex gap-2">
-                        <input type="text" value={messageText}
+                        <input
+                            type="text"
+                            value={messageText}
                             onChange={(e) => setMessageText(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage();
+                                }
+                            }}
                             placeholder="Type a message..."
-                            className="flex-1 px-4 py-2 border rounded-lg text-sm" />
+                            className="flex-1 px-4 py-2 border rounded-lg text-sm"
+                        />
                         <button onClick={handleSendMessage} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Send</button>
                     </div>
                 </footer>
